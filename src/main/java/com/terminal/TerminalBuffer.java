@@ -140,7 +140,7 @@ public class TerminalBuffer {
         if(maxScrollback>0)
         {
             Cell[] topLineCopy=new Cell[width];
-            for(int c=0;c<width-1;c++)
+            for(int c=0;c<width;c++)
             {
                 topLineCopy[c]=new Cell(screen[0][c].getCharacter(),screen[0][c].getAttributes());
             }
