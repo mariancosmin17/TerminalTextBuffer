@@ -9,6 +9,8 @@ public class TerminalBuffer {
     private int cursorRow;
     private Attributes currentAttributes;
 
+    private final Cell[][] screen;
+
     public TerminalBuffer(int width, int height, int maxScrollback) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Width and height must be positive.");
@@ -23,11 +25,19 @@ public class TerminalBuffer {
         this.cursorCol = 0;
         this.cursorRow = 0;
         this.currentAttributes = Attributes.createDefault();
+        this.screen = new Cell[height][width];
+
+        for (int r = 0; r < height; r++) {
+            for (int c = 0; c < width; c++) {
+                this.screen[r][c] = Cell.createEmpty();
+            }
+        }
     }
 
     public int getWidth() { return width; }
     public int getHeight() { return height; }
     public int getMaxScrollback() { return maxScrollback; }
+
     public Attributes getCurrentAttributes() {
         return currentAttributes;
     }
@@ -37,8 +47,10 @@ public class TerminalBuffer {
         }
         this.currentAttributes = attributes;
     }
+
     public int getCursorCol() { return cursorCol; }
     public int getCursorRow() { return cursorRow; }
+
     public void setCursorPosition(int col, int row) {
         this.cursorCol = Math.max(0, Math.min(width - 1, col));
         this.cursorRow = Math.max(0, Math.min(height - 1, row));
@@ -57,5 +69,35 @@ public class TerminalBuffer {
 
     public void moveCursorRight(int n) {
         setCursorPosition(cursorCol + n, cursorRow);
+    }
+    public void write(String text)
+    {
+        if(text==null||text.isEmpty()) return;
+        for(char ch:text.toCharArray())
+        {
+            Cell currentCell=screen[cursorRow][cursorCol];
+            currentCell.setCharacter(ch);
+            currentCell.setAttributes(currentAttributes);
+            if(cursorCol<width-1) {
+                cursorCol++;
+            }
+            else{
+                if(cursorRow<height-1){
+                    cursorCol=0;
+                    cursorRow++;
+                }
+            }
+        }
+    }
+
+    public void clearScreen() {
+        for (int r = 0; r < height; r++) {
+            for (int c = 0; c < width; c++) {
+                Cell cell = screen[r][c];
+                cell.setCharacter(' ');
+                cell.setAttributes(Attributes.createDefault());
+            }
+        }
+        setCursorPosition(0, 0);
     }
 }
