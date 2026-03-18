@@ -166,4 +166,75 @@ public class TerminalBuffer {
         clearScreen();
         scrollback.clear();
     }
+
+    public int getTotalRows() {
+        return scrollback.size() + height;
+    }
+
+    private Cell[] getRow(int virtualRow) {
+        if (virtualRow < 0 || virtualRow >= getTotalRows()) {
+            throw new IndexOutOfBoundsException("Row index out of bounds: " + virtualRow);
+        }
+
+        if (virtualRow < scrollback.size()) {
+            int currentIndex = 0;
+            for (Cell[] row : scrollback) {
+                if (currentIndex == virtualRow) return row;
+                currentIndex++;
+            }
+        }
+
+        int screenRow = virtualRow - scrollback.size();
+        return screen[screenRow];
+    }
+
+    public char getCharacterAt(int col, int virtualRow) {
+        if (col < 0 || col >= width) throw new IndexOutOfBoundsException("Column out of bounds");
+        return getRow(virtualRow)[col].getCharacter();
+    }
+
+    public Attributes getAttributesAt(int col, int virtualRow) {
+        if (col < 0 || col >= width) throw new IndexOutOfBoundsException("Column out of bounds");
+        return getRow(virtualRow)[col].getAttributes();
+    }
+
+    public String getLineAsString(int virtualRow) {
+        Cell[] row = getRow(virtualRow);
+        StringBuilder sb = new StringBuilder(width);
+
+        for (int c = 0; c < width; c++) {
+            sb.append(row[c].getCharacter());
+        }
+
+        int lastNonSpace = width - 1;
+        while (lastNonSpace >= 0 && sb.charAt(lastNonSpace) == ' ') {
+            lastNonSpace--;
+        }
+
+        return sb.substring(0, lastNonSpace + 1);
+    }
+
+    public String getScreenAsString() {
+        StringBuilder sb = new StringBuilder();
+        int startIndex = scrollback.size();
+
+        for (int r = startIndex; r < getTotalRows(); r++) {
+            sb.append(getLineAsString(r));
+            if (r < getTotalRows() - 1) {
+                sb.append(System.lineSeparator());
+            }
+        }
+        return sb.toString();
+    }
+
+    public String getEntireContentAsString() {
+        StringBuilder sb = new StringBuilder();
+        for (int r = 0; r < getTotalRows(); r++) {
+            sb.append(getLineAsString(r));
+            if (r < getTotalRows() - 1) {
+                sb.append(System.lineSeparator());
+            }
+        }
+        return sb.toString();
+    }
 }
