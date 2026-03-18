@@ -1,5 +1,8 @@
 package com.terminal;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 public class TerminalBuffer {
     private final int width;
     private final int height;
@@ -10,6 +13,8 @@ public class TerminalBuffer {
     private Attributes currentAttributes;
 
     private final Cell[][] screen;
+
+    private final Deque<Cell[]> scrollback;
 
     public TerminalBuffer(int width, int height, int maxScrollback) {
         if (width <= 0 || height <= 0) {
@@ -32,6 +37,8 @@ public class TerminalBuffer {
                 this.screen[r][c] = Cell.createEmpty();
             }
         }
+
+        this.scrollback = new ArrayDeque<>();
     }
 
     public int getWidth() { return width; }
@@ -99,5 +106,64 @@ public class TerminalBuffer {
             }
         }
         setCursorPosition(0, 0);
+    }
+
+    public void insert(String text) {
+        if (text == null || text.isEmpty()) return;
+        int len = text.length();
+        for (int r = height - 1; r >= cursorRow; r--) {
+            for (int c = width - 1; c >= 0; c--) {
+                if (r == cursorRow && c < cursorCol) continue;
+                int flatIndex = r * width + c;
+                int newFlatIndex = flatIndex + len;
+
+                if (newFlatIndex < width * height) {
+                    int newR = newFlatIndex / width;
+                    int newC = newFlatIndex % width;
+                    screen[newR][newC].setCharacter(screen[r][c].getCharacter());
+                    screen[newR][newC].setAttributes(screen[r][c].getAttributes());
+                }
+            }
+        }
+        write(text);
+    }
+
+    public void fillLine(char ch) {
+        for (int c = 0; c < width; c++) {
+            Cell cell = screen[cursorRow][c];
+            cell.setCharacter(ch);
+            cell.setAttributes(currentAttributes);
+        }
+    }
+
+    public void insertEmptyLine(){
+        if(maxScrollback>0)
+        {
+            Cell[] topLineCopy=new Cell[width];
+            for(int c=0;c<width-1;c++)
+            {
+                topLineCopy[c]=new Cell(screen[0][c].getCharacter(),screen[0][c].getAttributes());
+            }
+            if(scrollback.size()>=maxScrollback)
+            {
+                scrollback.pollFirst();
+            }
+            scrollback.addLast(topLineCopy);
+        }
+        for (int r = 0; r < height - 1; r++) {
+            for (int c = 0; c < width; c++) {
+                screen[r][c].setCharacter(screen[r+1][c].getCharacter());
+                screen[r][c].setAttributes(screen[r+1][c].getAttributes());
+            }
+        }
+        for (int c = 0; c < width; c++) {
+            screen[height-1][c].setCharacter(' ');
+            screen[height-1][c].setAttributes(Attributes.createDefault());
+        }
+    }
+
+    public void clearScreenAndScrollback() {
+        clearScreen();
+        scrollback.clear();
     }
 }
