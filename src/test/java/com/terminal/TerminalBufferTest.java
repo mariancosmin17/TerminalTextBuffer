@@ -75,4 +75,25 @@ class TerminalBufferTest {
         assertEquals(0, buffer.getCursorCol());
         assertEquals(0, buffer.getCursorRow());
     }
+
+    @Test
+    void testResizeTruncationStrategy() {
+        buffer.write("1234567890");
+
+        buffer.setCursorPosition(9, 2);
+
+        buffer.resize(5, 2);
+
+        assertEquals(5, buffer.getWidth());
+        assertEquals(2, buffer.getHeight());
+
+        assertEquals("12345", buffer.getLineAsString(0));
+
+        assertEquals(4, buffer.getCursorCol());
+        assertEquals(1, buffer.getCursorRow());
+
+        buffer.resize(10, 3);
+
+        assertEquals("12345", buffer.getLineAsString(0));
+    }
 }

@@ -4,15 +4,15 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 public class TerminalBuffer {
-    private final int width;
-    private final int height;
-    private final int maxScrollback;
+    private int width;
+    private int height;
+    private int maxScrollback;
 
     private int cursorCol;
     private int cursorRow;
     private Attributes currentAttributes;
 
-    private final Cell[][] screen;
+    private Cell[][] screen;
 
     private final Deque<Cell[]> scrollback;
 
@@ -236,5 +236,44 @@ public class TerminalBuffer {
             }
         }
         return sb.toString();
+    }
+
+    public void resize(int newWidth, int newHeight) {
+        if (newWidth <= 0 || newHeight <= 0) {
+            throw new IllegalArgumentException("New dimensions must be positive.");
+        }
+
+        Cell[][] newScreen = new Cell[newHeight][newWidth];
+        for (int r = 0; r < newHeight; r++) {
+            for (int c = 0; c < newWidth; c++) {
+                if (r < this.height && c < this.width) {
+                    newScreen[r][c] = this.screen[r][c];
+                } else {
+                    newScreen[r][c] = Cell.createEmpty();
+                }
+            }
+        }
+
+        Deque<Cell[]> newScrollback = new ArrayDeque<>();
+        for (Cell[] oldRow : this.scrollback) {
+            Cell[] newRow = new Cell[newWidth];
+            for (int c = 0; c < newWidth; c++) {
+                if (c < this.width) {
+                    newRow[c] = oldRow[c];
+                } else {
+                    newRow[c] = Cell.createEmpty();
+                }
+            }
+            newScrollback.addLast(newRow);
+        }
+
+        this.width = newWidth;
+        this.height = newHeight;
+        this.screen = newScreen;
+
+        this.scrollback.clear();
+        this.scrollback.addAll(newScrollback);
+
+        setCursorPosition(this.cursorCol, this.cursorRow);
     }
 }
